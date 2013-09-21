@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- General App related -->
+    <string name="app_name">OTA Updater</string>
+    <string name="app_display_name">Velox Updater</string>
+    <!-- Action Bar / Menu -->
+    <string name="action_settings">Settings</string>
+    <string name="action_update">Check for Updates</string>
+    <!-- Non Translateable Strings -->
+    <string name="empty_string" translateable="false"></string>
+    <!-- -->
+
+</resources>
