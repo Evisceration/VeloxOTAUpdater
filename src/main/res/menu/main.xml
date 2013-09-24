@@ -2,11 +2,13 @@
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
-        android:showAsAction="never"
+        android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_menu_settings"
         android:title="@string/action_settings" />
     <item
         android:id="@+id/action_update"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
+        android:icon="@drawable/ic_menu_refresh"
         android:title="@string/action_update" />
 </menu>

@@ -10,5 +10,12 @@
     <!-- Non Translateable Strings -->
     <string name="empty_string" translateable="false"></string>
     <!-- -->
+    <string name="prefs_cat_debug">Debug</string>
+    <string name="prefs_debug_log_title">Extend Logging</string>
+    <string name="prefs_debug_log_summary">When checked, logs additional information to LogCat.</string>
+
+    <string name="prefs_cat_update">Update</string>
+    <string name="prefs_update_beta_title">Include Beta Updates</string>
+    <string name="prefs_update_beta_summary">Check for Beta Updates as well.</string>
 
 </resources>

@@ -17,8 +17,14 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES := $(call all-subdir-java-files)
+
+src_dirs := src/main/java
+res_dirs := src/main/res
+
+LOCAL_SRC_FILES := $(call all-java-files-under, $(src_dirs))
+LOCAL_RESOURCE_DIR := $(addprefix $(LOCAL_PATH)/, $(res_dirs))
 LOCAL_PACKAGE_NAME := VeloxOTAUpdater
 LOCAL_CERTIFICATE := platform
+
 include $(BUILD_PACKAGE)
 

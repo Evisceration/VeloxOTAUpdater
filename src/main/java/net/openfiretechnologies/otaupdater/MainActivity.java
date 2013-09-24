@@ -32,7 +32,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import net.openfiretechnologies.otaupdater.helper.Const;
-import net.openfiretechnologies.otaupdater.helper.Methods;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -49,28 +48,46 @@ import java.util.HashMap;
 import java.util.List;
 
 import static net.openfiretechnologies.otaupdater.helper.Methods.LogDebug;
+import static net.openfiretechnologies.otaupdater.helper.Methods.getListFiles;
 
 public class MainActivity extends Activity {
     //========================================
     public static LinearLayout mOverlay;
+    public static boolean isDebug = false;
     //========================================
     public ProgressDialog mProgressDialog;
     //========================================
     private DownloadManager mDownloadManager;
     private SharedPreferences mPrefs;
-    private List<String> names, urls;
+    private List<String> names, urls, tmpNames, tmpUrls;
     private ListView lv;
     private ArrayAdapter<String> adapter;
     private WindowManager wm;
     private DownloadManager.Request mRequest;
     private long enqueue;
     private String fullPath = "", filename = "", foldername = "";
+    private BroadcastReceiver receiver;
     //========================================
+
+    private void getPrefEntries() {
+        isDebug = mPrefs.getBoolean("prefs_debug_log", false);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        getPrefEntries();
+        registerReceiver(receiver, new IntentFilter(
+                DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //Filepath
+        foldername = Environment.getExternalStorageDirectory() + File.separator + "0_velox" + File.separator;
 
         //Get the DownloadManager
         mDownloadManager = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
@@ -81,6 +98,8 @@ public class MainActivity extends Activity {
         //Get the Preferences
         mPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
+        getPrefEntries();
+
         //Get the listview
         lv = (ListView) findViewById(R.id.lvUpdates);
 
@@ -88,7 +107,11 @@ public class MainActivity extends Activity {
         names = new ArrayList<String>();
         urls = new ArrayList<String>();
 
-        //TODO get already downloaded files
+        //get already downloaded files
+        names = getListFiles(new File(foldername));
+        names.add(0, "LOCAL");
+        while (urls.size() < names.size())
+            urls.add(0, "LOCAL");
 
         //Setup Array adapter for the listview
         adapter = new ArrayAdapter<String>(getBaseContext(), android.R.layout.simple_list_item_1, names);
@@ -109,10 +132,12 @@ public class MainActivity extends Activity {
                 final String name = (String) adapterView.getItemAtPosition(position);
                 filename = name + ".zip";
                 final String url = urls.get(position);
-                foldername = Environment.getExternalStorageDirectory() + File.separator + "0_velox" + File.separator;
                 fullPath = foldername + filename;
                 //=====================================
                 //=====================================
+                if (name.equals("LOCAL") || name.equals("UPDATES")) {
+                    return;
+                }
 
                 if (new File(fullPath).exists()) {
                     AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
@@ -196,7 +221,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        BroadcastReceiver receiver = new BroadcastReceiver() {
+        receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
@@ -263,6 +288,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        unregisterReceiver(receiver);
         if (mOverlay != null) {
             if (mOverlay.isShown())
                 wm.removeView(mOverlay);
@@ -283,7 +309,7 @@ public class MainActivity extends Activity {
                 new DownloadChecker(this).execute();
                 break;
             case R.id.action_settings:
-                Methods.MakeToast(this, "Not implemented yet!", false);
+                startActivity(new Intent(MainActivity.this, Preferences.class));
                 break;
         }
         return false;
@@ -302,15 +328,41 @@ public class MainActivity extends Activity {
 
     public void setUpdateResult(HashMap<String, List<String>> map) {
         try {
-            names = map.get("names");
-            urls = map.get("urls");
-            LogDebug("nameslength: " + names.size());
-            LogDebug("urlslength: " + urls.size());
+            tmpNames = map.get("names");
+            tmpUrls = map.get("urls");
+            names = new ArrayList<String>();
+            urls = new ArrayList<String>();
+
+            names = getListFiles(new File(foldername));
+            names.add(0, "LOCAL");
+            while (urls.size() < names.size())
+                urls.add(0, "LOCAL");
+
+            LogDebug("nameslength: " + tmpNames.size());
+            LogDebug("urlslength: " + tmpUrls.size());
 
             new Runnable() {
                 @Override
                 public void run() {
                     adapter.clear();
+
+                    names.add("UPDATES");
+                    urls.add("UPDATES");
+
+                    for (String name : tmpNames) {
+                        if (mPrefs.getBoolean("prefs_update_beta", false)) {
+                            int index = tmpNames.indexOf(name);
+                            names.add(tmpNames.get(index));
+                            urls.add(tmpUrls.get(index));
+                        } else {
+                            if (!(name.toUpperCase().contains("BETA"))) {
+                                int index = tmpNames.indexOf(name);
+                                names.add(tmpNames.get(index));
+                                urls.add(tmpUrls.get(index));
+                            }
+                        }
+                    }
+
                     adapter.addAll(names);
                     adapter.notifyDataSetChanged();
                 }
@@ -321,7 +373,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class DownloadChecker extends AsyncTask<String, Integer, HashMap<String, List<String>>> {
+    private class DownloadChecker extends AsyncTask<String, String, HashMap<String, List<String>>> {
 
         final MainActivity mainActivity;
 
@@ -330,9 +382,24 @@ public class MainActivity extends Activity {
         }
 
         @Override
+        protected void onProgressUpdate(String... values) {
+            if (!values[0].isEmpty()) {
+                final String msg = values[0];
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mProgressDialog.setMessage(msg);
+                    }
+                });
+            }
+        }
+
+        @Override
         protected HashMap<String, List<String>> doInBackground(String... strings) {
             //Prepare HashMap, which stores our Update Addresses as NAME, URL
             HashMap<String, List<String>> map = new HashMap<String, List<String>>();
+
+            onProgressUpdate("Setting up HttpClient.");
 
             // Create HttpClient, HttpContext and HttpGet to send our request
             HttpClient httpClient = new DefaultHttpClient();
@@ -340,12 +407,13 @@ public class MainActivity extends Activity {
             HttpGet httpGet = new HttpGet(Const.URL);
 
             try {
+                onProgressUpdate("Connecting..");
                 //Getting the response and put it into a String
                 HttpResponse response = httpClient.execute(httpGet,
                         httpContext);
                 String responseString = EntityUtils.toString(response.getEntity());
                 LogDebug("Response: " + responseString);
-
+                onProgressUpdate("Handling the response...");
                 //Prepare the String for adding it into the Hashmap
                 String[] splitted = responseString.split("\\|\\|");
                 //Lists to store entries
@@ -353,6 +421,7 @@ public class MainActivity extends Activity {
                 List<String> urls = new ArrayList<String>();
                 int i = 0;
 
+                onProgressUpdate("Adding names to list.");
                 //Add entries for names
                 for (String aSplitted : splitted) {
                     names.add(aSplitted.split("\\|")[0]);
@@ -362,12 +431,14 @@ public class MainActivity extends Activity {
                 //Reset counter
                 i = 0;
 
+                onProgressUpdate("Adding urls to list..");
                 //Add entries for urls
                 for (String aSplitted : splitted) {
                     urls.add(aSplitted.split("\\|")[1]);
                     i++;
                 }
 
+                onProgressUpdate("Checking lists...");
                 //Check if length of names is equal to urls
                 if (names.size() == urls.size()) {
                     map.put("names", names);
@@ -379,11 +450,13 @@ public class MainActivity extends Activity {
                 LogDebug("Error: " + exc.getMessage());
             }
 
+            onProgressUpdate("Done!");
             return map;
         }
 
         @Override
         protected void onPreExecute() {
+            mainActivity.getPrefEntries();
             mainActivity.createProgressDialog("Checking for Updates...", "");
         }
 
@@ -391,7 +464,6 @@ public class MainActivity extends Activity {
         protected void onPostExecute(HashMap<String, List<String>> map) {
             mainActivity.mProgressDialog.dismiss();
             mainActivity.setUpdateResult(map);
-
         }
     }
 

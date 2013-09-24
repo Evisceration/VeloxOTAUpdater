@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/prefs_cat_update" />
+
+    <CheckBoxPreference
+        android:title="@string/prefs_update_beta_title"
+        android:key="prefs_update_beta"
+        android:summary="@string/prefs_update_beta_summary" />
+
+    <PreferenceCategory android:title="@string/prefs_cat_debug" />
+
+    <CheckBoxPreference
+        android:title="@string/prefs_debug_log_title"
+        android:summary="@string/prefs_debug_log_summary"
+        android:key="prefs_debug_log" />
+
+</PreferenceScreen>
