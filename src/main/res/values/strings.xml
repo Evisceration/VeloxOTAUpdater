@@ -2,7 +2,7 @@
 <resources>
 
     <!-- General App related -->
-    <string name="app_name">OTA Updater</string>
+    <string name="app_name">Velox Updater</string>
     <string name="app_display_name">Velox Updater</string>
     <!-- Action Bar / Menu -->
     <string name="action_settings">Settings</string>

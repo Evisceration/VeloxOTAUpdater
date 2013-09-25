@@ -48,8 +48,9 @@ import java.util.HashMap;
 import java.util.List;
 
 import static net.openfiretechnologies.otaupdater.helper.Methods.LogDebug;
-import static net.openfiretechnologies.otaupdater.helper.Methods.hasStorage;
+import static net.openfiretechnologies.otaupdater.helper.Methods.MakeToast;
 import static net.openfiretechnologies.otaupdater.helper.Methods.getListFiles;
+import static net.openfiretechnologies.otaupdater.helper.Methods.hasStorage;
 
 public class MainActivity extends Activity {
     //========================================
@@ -129,8 +130,10 @@ public class MainActivity extends Activity {
                     }
                 }
 
-		if(!hasStorage(true))
-			return;
+                if (!hasStorage(true)) {
+                    MakeToast(MainActivity.this, "No SDcard mounted!", true);
+                    return;
+                }
 
                 //=====================================
                 //=====================================

@@ -36,15 +36,17 @@ public class Methods {
 
     public static List<String> getListFiles(File parentDir) {
         ArrayList<String> inFiles = new ArrayList<String>();
-	if(!hasStorage(false))
-		return inFiles;
+        if (!hasStorage(false))
+            return inFiles;
         File[] files = parentDir.listFiles();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                inFiles.addAll(getListFiles(file));
-            } else {
-                if (file.getName().endsWith(".zip")) {
-                    inFiles.add(file.getName().replace(".zip", ""));
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    inFiles.addAll(getListFiles(file));
+                } else {
+                    if (file.getName().endsWith(".zip")) {
+                        inFiles.add(file.getName().replace(".zip", ""));
+                    }
                 }
             }
         }
@@ -52,18 +54,14 @@ public class Methods {
     }
 
     public static boolean hasStorage(boolean requireWriteAccess) {
-    	String state = Environment.getExternalStorageState();
+        String state = Environment.getExternalStorageState();
 
-    	if (Environment.MEDIA_MOUNTED.equals(state)) {
-    	    if (requireWriteAccess) {
-     	       return checkFsWritable();
-     	   } else {
-     	       return true;
-     	   }
-    	} else if (!requireWriteAccess && Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-    	    return true;
-    	}
-   	 return false;
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return !requireWriteAccess || checkFsWritable();
+        } else if (!requireWriteAccess && Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
     }
 
     private static boolean checkFsWritable() {
