@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static net.openfiretechnologies.otaupdater.helper.Methods.LogDebug;
+import static net.openfiretechnologies.otaupdater.helper.Methods.hasStorage;
 import static net.openfiretechnologies.otaupdater.helper.Methods.getListFiles;
 
 public class MainActivity extends Activity {
@@ -127,6 +128,10 @@ public class MainActivity extends Activity {
                         return;
                     }
                 }
+
+		if(!hasStorage(true))
+			return;
+
                 //=====================================
                 //=====================================
                 final String name = (String) adapterView.getItemAtPosition(position);
